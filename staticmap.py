@@ -30,6 +30,7 @@ import urllib2
 from math import pow, log, tan, pi, cos, floor, ceil
 from md5 import md5
 import Image
+import ImageDraw
 
 class StaticMap:
     def __init__(self):
@@ -44,18 +45,13 @@ class StaticMap:
         self.use_tile_cache = True
         self.tile_cache_base_dir = 'cache/tiles'
         
-        self.use_map_cache = True
-        self.map_cache_base_dir = 'cache/maps'
-        self.map_cache_id = ''
-        self.map_cache_file = None
-        self.map_cache_extension = 'png'
-        
         self.zoom = 0
         self.lat = 0
         self.lon = 0
         self.width = 500
         self.height = 350
         self.markers = []
+        self.paths = []
         self.map_type = self.tile_default_src
     
     def setup_map(self, lat, lon, zoom, map_width, map_height):
@@ -64,6 +60,8 @@ class StaticMap:
         self.zoom = zoom
         self.width = int(map_width)
         self.height = int(map_height)
+        self.center_x = self.lon_to_tile(self.lon, self.zoom)
+        self.center_y = self.lat_to_tile(self.lat, self.zoom)
         
     def lon_to_tile(self, longitude, zoom):
         return ((longitude + 180) / 360) * pow(2, zoom)
@@ -71,9 +69,7 @@ class StaticMap:
     def lat_to_tile(self, latitude, zoom):
         return (1 - log(tan(latitude * pi/180) + 1 / cos(latitude * pi/180)) / pi) / 2 * pow(2, zoom)
     
-    def init_coords(self):        
-        self.center_x = self.lon_to_tile(self.lon, self.zoom)
-        self.center_y = self.lat_to_tile(self.lat, self.zoom)
+
         
     def tile_url_to_filename(self, url):
         return self.tile_cache_base_dir + "/" + url.replace("http://", "")
@@ -159,12 +155,30 @@ class StaticMap:
             dest_y = floor((self.height / 2) - self.tile_size * (self.center_y - self.lat_to_tile(marker_lat, self.zoom)))
 
             self.image.paste(marker_img, (int(dest_x + marker_offset_x), int(dest_y + marker_offset_y)))
-
-    def make_map(self):
-        self.init_coords()
-        self.create_base_map()
+            
+    def point_to_image_point(self, point):
+        lon = point['lon']
+        lat = point['lat']
+        clon = floor((self.width / 2) - self.tile_size * (self.center_x - self.lon_to_tile(lon, self.zoom)))
+        clat = floor((self.height / 2) - self.tile_size * (self.center_y - self.lat_to_tile(lat, self.zoom)))
+        return (clon, clat)
+            
+    def add_path(self, point_1, point_2):
+        image_point_1 = self.point_to_image_point(point_1)
+        image_point_2 = self.point_to_image_point(point_2)
+        self.paths.append( (image_point_1, image_point_2) )
+    
+    def place_paths(self):
+        draw = ImageDraw.Draw(self.image)
+        for path in self.paths:
+            draw.line(path, fill = (255, 0, 128), width=4)
+    
+    def reset(self):
+        self.paths = []
+        self.markers = []
     
     def save_map(self, filename):
-        self.make_map()
+        self.create_base_map()
+        self.place_paths()
         self.place_markers()
         self.image.save(filename, "PNG")
