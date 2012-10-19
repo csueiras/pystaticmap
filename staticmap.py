@@ -39,8 +39,7 @@ class StaticMap:
                                 'cycle' : 'http://c.andy.sandbox.cloudmade.com/tiles/cycle/%s/%s/%s.png' }
                                 
         self.tile_default_src = 'mapnik'
-        self.marker_base_dir = 'images/markers'
-        self.osm_logo = 'images/osm_logo.png'
+        self.marker_base_dir = 'marker_icons'
         
         self.use_tile_cache = True
         self.tile_cache_base_dir = 'cache/tiles'
@@ -113,7 +112,7 @@ class StaticMap:
         return self.write_tile_to_cache(url, tile)         
         
     def create_base_map(self):
-        self.image = Image.new("RGB", (self.width, self.height), "#FFFFFF")
+        self.image = Image.new("RGBA", (self.width, self.height), "#FFFFFF")
         start_x = floor(self.center_x - (self.width / self.tile_size) / 2) - 1
         start_y = floor(self.center_y - (self.height / self.tile_size) / 2) - 1
         end_x = ceil(self.center_x + (self.width / self.tile_size) / 2)
@@ -142,10 +141,30 @@ class StaticMap:
 
                 self.image.paste(tile_image, (dest_x, dest_y))
                 
+    def add_marker(self, marker):
+        self.markers.append(marker)
+    
+    def place_markers(self):
+        for marker in self.markers:
+            marker_lat = marker['lat']
+            marker_lon = marker['lon']
+            marker_filename = marker['filename']
+
+            marker_offset_x = int(marker['offset_x'])
+            marker_offset_y = int(marker['offset_y'])
+            
+            marker_img = Image.open(self.marker_base_dir + "/" + marker_filename, "r")
+            
+            dest_x = floor((self.width / 2) - self.tile_size * (self.center_x - self.lon_to_tile(marker_lon, self.zoom)))
+            dest_y = floor((self.height / 2) - self.tile_size * (self.center_y - self.lat_to_tile(marker_lat, self.zoom)))
+
+            self.image.paste(marker_img, (int(dest_x + marker_offset_x), int(dest_y + marker_offset_y)))
+
     def make_map(self):
         self.init_coords()
         self.create_base_map()
     
     def save_map(self, filename):
         self.make_map()
+        self.place_markers()
         self.image.save(filename, "PNG")

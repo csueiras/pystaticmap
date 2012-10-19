@@ -29,8 +29,22 @@ import sys
 from staticmap import StaticMap
 
 if __name__ == "__main__":
-    maps = [{'lat': 40.714728, 'lon':-73.998672, 'zoom':14, 'width':250, 'height':250, 'filename': 'new_york.png'},\
-            {'lat': 27.790491, 'lon':-81.584473, 'zoom':7, 'width':600, 'height':600, 'filename': 'florida.png'}]
+    maps = [{   'lat': 40.714728, \
+                'lon':-73.998672, \
+                'zoom':14, \
+                'width':600, \
+                'height':600, \
+                'filename': 'new_york.png', \
+                'markers': [{'lat': 40.714728, 'lon':-73.998672, 'filename': 'accident.png', 'offset_x': -16, 'offset_y': 0}] \
+                },\
+            {   'lat': 27.790491, \
+                'lon':-81.584473, \
+                'zoom':7, \
+                'width':600, \
+                'height':600, \
+                'filename': 'florida.png', \
+                'markers': [{'lat': 27.790491, 'lon':-81.584473, 'filename': 'accident.png', 'offset_x': 0, 'offset_y': 0}] \
+                }]
             
     output_dir = 'tests'
     
@@ -38,6 +52,7 @@ if __name__ == "__main__":
     for test_map in maps:
         print "Generating... " + test_map['filename']
         my_map.setup_map(lat = test_map['lat'], lon = test_map['lon'], zoom = test_map['zoom'], map_width = test_map['width'], map_height =  test_map['height'])
-        my_map.make_map()
+        for marker in test_map['markers']:
+            my_map.add_marker(marker)
         my_map.save_map(output_dir + '/' + test_map['filename'])
         print "Generated"
