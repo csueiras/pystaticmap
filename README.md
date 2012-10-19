@@ -4,5 +4,5 @@ pystaticmap
 Python class to generate static maps, based on staticMapLite (PHP)
 
 Dependencies:
--Python Image Library (PIL)
--URLib2
+1.	Python Image Library (PIL)
+2.	URLib2
